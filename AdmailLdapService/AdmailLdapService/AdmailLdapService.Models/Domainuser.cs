@@ -14,7 +14,7 @@ namespace AdmailLdapService.Models
     {
         [Key]
         [DatabaseGeneratedAttribute(DatabaseGeneratedOption.Identity)]
-        public int UserId { get; set; }
+        public int UserId { get; set; } 
 
         [StringLength(100)]
         public string? UserName { get; set; } = null!;

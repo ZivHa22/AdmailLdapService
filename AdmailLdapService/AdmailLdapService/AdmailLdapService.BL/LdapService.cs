@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.DirectoryServices.AccountManagement;
-using System.DirectoryServices.Protocols;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using AdmailLdapService.DAL.Interfaces;
+﻿using AdmailLdapService.DAL.Interfaces;
 using AdmailLdapService.Models;
+using System.Collections;
+using System.DirectoryServices.Protocols;
+
+using System.Net;
+using System.Text.RegularExpressions;
+
 
 namespace AdmailLdapService.BL
 {
@@ -16,35 +14,115 @@ namespace AdmailLdapService.BL
 
 
         private readonly ITblAdministrationRepository tblAdministrationRepository;
-        public LdapService(ITblAdministrationRepository _tblAdministrationRepositor)
+        private readonly IUsersRepository usersRepository;
+        public LdapService(ITblAdministrationRepository _tblAdministrationRepositor, IUsersRepository _usersRepository)
         {
             tblAdministrationRepository = _tblAdministrationRepositor;
+            usersRepository = _usersRepository;
         }
 
         public void LoadLdapUsers()
         {
             LdapDetail ldapDetail = tblAdministrationRepository.GetldapDetails();
-            var identifier = new LdapDirectoryIdentifier(ldapDetail.Host, ldapDetail.Port);
-            var credentials = new NetworkCredential(ldapDetail.BindDn, ldapDetail.Password);
-            using var connection = new LdapConnection(identifier, credentials)
+            try
             {
-                AuthType = AuthType.Basic
-            };
 
-            connection.Bind();
+                var identifier = new LdapDirectoryIdentifier(ldapDetail.Host, ldapDetail.Port);
+                var credentials = new NetworkCredential(ldapDetail.BindDn, ldapDetail.Password);
+                using var connection = new LdapConnection(identifier, credentials, AuthType.Basic)
+                {
+                    SessionOptions =
+                    {
+                        ProtocolVersion = 3,
+                        ReferralChasing = ReferralChasingOptions.None
+                    }
+                };
 
-            Console.WriteLine("Connected to LDAP\n");
 
-            // Search for users
-            string userFilter = "(objectClass=user)";
-            var userRequest = new SearchRequest(ldapDetail.BaseDn, userFilter, SearchScope.Subtree, new[] { "cn" });
-            var userResponse = (SearchResponse)connection.SendRequest(userRequest);
 
-            Console.WriteLine("=== Users ===");
-            foreach (SearchResultEntry entry in userResponse.Entries)
-            {
-                Console.WriteLine("User CN: " + entry.Attributes["cn"]?[0]);
+                connection.Bind(); // 2. Authenticate
+                Console.WriteLine("LDAP bind successful.");
+
+                // 3. Get all users (objectClass=user)
+
+                string ldapFilter = "(objectClass=user)";
+
+                var request = new SearchRequest(
+                    ldapDetail.BaseDn,
+                    ldapFilter,
+                    SearchScope.Subtree,
+                    null
+                );
+                var response = (SearchResponse)connection.SendRequest(request);
+
+                Console.WriteLine("Users found:");
+
+                foreach (SearchResultEntry entry in response.Entries)
+                {
+                    string adfields = "Usergroups=;";
+                    foreach (string attrName in entry.Attributes.AttributeNames)
+                    {
+                        var values = entry.Attributes[attrName];
+                        foreach (var val in values)
+                        {
+                            if (val is byte[] bytes)
+                            {
+                                // Handle known binary attributes
+                                if (attrName.Equals("cn", StringComparison.OrdinalIgnoreCase) || attrName.Equals("mail", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    continue;
+                                }
+
+                                else
+                                {
+                                    // For unknown binary data, convert to Base64
+                                    adfields += $"{attrName}={System.Text.Encoding.UTF8.GetString(bytes)};";
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"{attrName}: {val}");
+                            }
+                        }
+                    }
+
+                    string cn = entry.Attributes["cn"]?[0]?.ToString() ?? "N/A";
+                    string mail = entry.Attributes["mail"]?[0]?.ToString() ?? "N/A";
+                    Domainuser domainuser = new Domainuser(cn, false, mail, CleanString(adfields));
+                    usersRepository.UpdateUserAd(domainuser);
+
+                }
+
+                string groupFilter = "(objectClass=group)";
+                var requestGroups = new SearchRequest(
+                       ldapDetail.BaseDn,  // base DN
+                        groupFilter,
+                        SearchScope.Subtree,
+                         new[] { "cn" }  // get all attributes
+                        );
+                var responseGroups = (SearchResponse)connection.SendRequest(request);
+                foreach (SearchResultEntry entry in response.Entries)
+                {
+                    if (entry.Attributes["cn"] != null)
+                    {
+                        Console.WriteLine(entry.Attributes["cn"][0]);
+                        Domainuser domainuser = new Domainuser(entry.Attributes["cn"][0].ToString(), true, "", "");
+                        usersRepository.UpdateUserAd(domainuser);
+                    }
+                }
+
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"LDAP Error: {ex.Message}");
+            }
+        }
+
+
+        private string CleanString(string input)
+        {
+            // Removes all control characters (ASCII codes < 32 except newline, tab, etc.)
+            return Regex.Replace(input, @"[\x00-\x1F\x7F]", string.Empty);
         }
     }
 }

@@ -29,9 +29,21 @@ namespace AdmailLdapService.DAL.Respositories
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new Exception(ex.Message);
             }
 
+        }
+        public void UpdateUserAd(Domainuser user)
+        {
+            try
+            {
+                context.Add(user);
+                context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
         public void AddGroups(List<Domainuser> groups)
         {
