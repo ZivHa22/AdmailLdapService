@@ -16,6 +16,8 @@ var configuration = new ConfigurationBuilder()
      .SetBasePath(Directory.GetCurrentDirectory())  // base path = bin/Debug/...
      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
      .Build();
+
+
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(configuration)
     .CreateLogger();

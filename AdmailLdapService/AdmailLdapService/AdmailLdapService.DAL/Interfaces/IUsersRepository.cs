@@ -11,7 +11,9 @@ namespace AdmailLdapService.DAL.Interfaces
     {
 
         public void AddUsersAd(List<Domainuser> users);
-        public void UpdateUserAd(Domainuser user);
+        public void AddUserAd(Domainuser user);
         public void AddGroups(List<Domainuser> groups);
+
+        public void DeleteAllDomainUsers();
     }
 }

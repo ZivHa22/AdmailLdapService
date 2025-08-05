@@ -1,5 +1,6 @@
 ﻿using AdmailLdapService.DAL.Interfaces;
 using AdmailLdapService.Models;
+using Microsoft.Extensions.Logging;
 using System.Collections;
 using System.DirectoryServices.Protocols;
 
@@ -15,10 +16,12 @@ namespace AdmailLdapService.BL
 
         private readonly ITblAdministrationRepository tblAdministrationRepository;
         private readonly IUsersRepository usersRepository;
-        public LdapService(ITblAdministrationRepository _tblAdministrationRepositor, IUsersRepository _usersRepository)
+        private ILogger<LdapService> logger;
+        public LdapService(ITblAdministrationRepository _tblAdministrationRepositor, IUsersRepository _usersRepository,ILogger<LdapService> _logger)
         {
             tblAdministrationRepository = _tblAdministrationRepositor;
             usersRepository = _usersRepository;
+            logger = _logger;   
         }
 
         public void LoadLdapUsers()
@@ -41,8 +44,8 @@ namespace AdmailLdapService.BL
 
 
                 connection.Bind(); // 2. Authenticate
-                Console.WriteLine("LDAP bind successful.");
-
+                logger.LogInformation("LDAP bind successful.");
+                usersRepository.DeleteAllDomainUsers();
                 // 3. Get all users (objectClass=user)
 
                 string ldapFilter = "(objectClass=user)";
@@ -89,7 +92,7 @@ namespace AdmailLdapService.BL
                     string cn = entry.Attributes["cn"]?[0]?.ToString() ?? "N/A";
                     string mail = entry.Attributes["mail"]?[0]?.ToString() ?? "N/A";
                     Domainuser domainuser = new Domainuser(cn, false, mail, CleanString(adfields));
-                    usersRepository.UpdateUserAd(domainuser);
+                    usersRepository.AddUserAd(domainuser);
 
                 }
 
@@ -107,7 +110,7 @@ namespace AdmailLdapService.BL
                     {
                         Console.WriteLine(entry.Attributes["cn"][0]);
                         Domainuser domainuser = new Domainuser(entry.Attributes["cn"][0].ToString(), true, "", "");
-                        usersRepository.UpdateUserAd(domainuser);
+                        usersRepository.AddUserAd(domainuser);
                     }
                 }
 

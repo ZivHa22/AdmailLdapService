@@ -1,13 +1,14 @@
-﻿using System;
+﻿using AdmailLdapService.DAL.DataAccess;
+using AdmailLdapService.DAL.Interfaces;
+using AdmailLdapService.Models;
+using Azure.Core;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AdmailLdapService.DAL.DataAccess;
-using AdmailLdapService.DAL.Interfaces;
-using AdmailLdapService.Models;
-using Azure.Core;
-using Microsoft.Extensions.Configuration;
 
 namespace AdmailLdapService.DAL.Respositories
 {
@@ -33,12 +34,14 @@ namespace AdmailLdapService.DAL.Respositories
             }
 
         }
-        public void UpdateUserAd(Domainuser user)
+        public void AddUserAd(Domainuser user)
         {
             try
             {
+                DateTime savedate = DateTime.Now;
                 context.Add(user);
                 context.SaveChanges();
+                UpdateLastLoadUser(savedate);
             }
             catch (Exception ex)
             {
@@ -49,8 +52,38 @@ namespace AdmailLdapService.DAL.Respositories
         {
             try
             {
+                
                 context.Domainusers.AddRange(groups);
-                context.SaveChanges();  
+                context.SaveChanges();
+               
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public void DeleteAllDomainUsers()
+        {
+            try
+            {
+                context.Domainusers.RemoveRange(context.Domainusers.ToList());
+                context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        private void UpdateLastLoadUser(DateTime lastLoad)
+        {
+            try
+            {
+                Tbladministration tbladministration = context.Tbladministrations.AsNoTracking().FirstOrDefault();
+                tbladministration.LastLoad = lastLoad;
+                context.ChangeTracker.Clear();
+                context.Tbladministrations.Update(tbladministration);
+                context.SaveChanges();
             }
             catch (Exception ex)
             {
