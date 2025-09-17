@@ -61,7 +61,7 @@ namespace AdmailLdapService.BL
                 );
                 var response = (SearchResponse)connection.SendRequest(request);
 
-                Console.WriteLine("Users found:");
+                logger.LogInformation("Users found:");
 
                 foreach (SearchResultEntry entry in response.Entries)
                 {
@@ -87,7 +87,7 @@ namespace AdmailLdapService.BL
                             }
                             else
                             {
-                                Console.WriteLine($"{attrName}: {val}");
+                                logger.LogInformation($"{attrName}: {val}");
                             }
                         }
                     }
@@ -111,7 +111,7 @@ namespace AdmailLdapService.BL
                 {
                     if (entry.Attributes["cn"] != null)
                     {
-                        Console.WriteLine(entry.Attributes["cn"][0]);
+                        logger.LogInformation($"{entry.Attributes["cn"][0]}");
                         Domainuser domainuser = new Domainuser(entry.Attributes["cn"][0].ToString(), true, "", "");
                         usersRepository.AddUserAd(domainuser);
                     }
@@ -120,7 +120,7 @@ namespace AdmailLdapService.BL
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"LDAP Error: {ex.Message}");
+                logger.LogError($"LDAP Error: {ex.Message}");
             }
         }
 

@@ -48,7 +48,7 @@ namespace AdmailLdapService.DAL.Respositories
         {
             try
             {
-                return context.LdapDetails.FirstOrDefault();
+                return context.LdapDetails.AsNoTracking().FirstOrDefault();
             }
             catch (Exception ex)
             {
