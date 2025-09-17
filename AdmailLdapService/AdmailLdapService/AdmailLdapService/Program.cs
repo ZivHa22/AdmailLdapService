@@ -11,6 +11,7 @@ using AdmailLdapService.DAL.Respositories;
 using Serilog;
 using Microsoft.Extensions.Logging;
 using AdmailLdapService.BL;
+using Microsoft.Data.SqlClient;
 
 var configuration = new ConfigurationBuilder()
      .SetBasePath(Directory.GetCurrentDirectory())  // base path = bin/Debug/...
@@ -34,10 +35,23 @@ services.AddLogging(loggingBuilder =>
 services.AddDbContext<AdmailDbContext>(options =>
     options.UseSqlServer(configuration.GetConnectionString("DbConnectionString")));
 
+services.AddDbContext<AdmailDbContext>(options =>
+{
+    SecurityService securityService = new SecurityService();
+    string ConStr = configuration.GetConnectionString("DbConnectionString");
+    SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder(ConStr);
+    string DecryptString = securityService.DecryptString(sqlConnectionStringBuilder.Password);
+    sqlConnectionStringBuilder.Password = DecryptString;
+    string connection = sqlConnectionStringBuilder.ConnectionString;
+});
+
+
+
 
 
 services.AddScoped<LdapServiceMain>();
 services.AddScoped<LdapService>();
+services.AddScoped<SecurityService>();
 services.AddScoped<ITblAdministrationRepository, TblAdministrationRepository>();
 services.AddScoped<IUsersRepository, UsersRepository>();
 

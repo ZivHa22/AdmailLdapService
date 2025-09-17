@@ -16,17 +16,20 @@ namespace AdmailLdapService.BL
 
         private readonly ITblAdministrationRepository tblAdministrationRepository;
         private readonly IUsersRepository usersRepository;
+        private readonly SecurityService securityService;
         private ILogger<LdapService> logger;
-        public LdapService(ITblAdministrationRepository _tblAdministrationRepositor, IUsersRepository _usersRepository,ILogger<LdapService> _logger)
+        public LdapService(ITblAdministrationRepository _tblAdministrationRepositor, IUsersRepository _usersRepository,ILogger<LdapService> _logger,SecurityService _securityService)
         {
             tblAdministrationRepository = _tblAdministrationRepositor;
             usersRepository = _usersRepository;
             logger = _logger;   
+            securityService = _securityService;
         }
 
         public void LoadLdapUsers()
         {
             LdapDetail ldapDetail = tblAdministrationRepository.GetldapDetails();
+            ldapDetail.Password = securityService.DecryptString(ldapDetail.Password);
             try
             {
 
