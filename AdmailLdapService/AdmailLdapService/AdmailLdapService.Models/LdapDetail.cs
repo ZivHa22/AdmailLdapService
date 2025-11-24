@@ -18,6 +18,8 @@ namespace AdmailLdapService.Models
 
         public string Password { get; set; } 
 
-        public string BaseDn { get; set; } 
+        public string BaseDn { get; set; }
+
+        
     }
 }
