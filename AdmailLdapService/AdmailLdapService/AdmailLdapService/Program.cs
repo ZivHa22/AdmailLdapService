@@ -43,6 +43,7 @@ services.AddSingleton<IConfiguration>(configuration);
 services.AddScoped<LdapServiceMain>();
 services.AddScoped<LdapService>();
 services.AddScoped<LdapServiceNovell>();
+services.AddScoped<LdapServiceLinqToLdap>();
 services.AddScoped<SecurityService>();
 
 

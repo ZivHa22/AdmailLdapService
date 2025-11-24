@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using LinqToLdap.Mapping;
 
 namespace AdmailLdapService.Models
 {
-    internal class LdapGroup
+    [DirectorySchema(NamingContext, ObjectClass = "group")]
+    public class LdapGroup
     {
+        public const string NamingContext = "DC=yourdomain,DC=local";
+
+        [DistinguishedName]
+        public string DistinguishedName { get; set; }
+
+        [DirectoryAttribute("cn")]
+        public string Name { get; set; }
     }
 }
