@@ -13,11 +13,12 @@ var configuration = new ConfigurationBuilder()
      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
      .Build();
 
-
+var logPath = Path.Combine(AppContext.BaseDirectory, "Logs", "log-.txt");
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
+    .WriteTo.Console()
     .WriteTo.File(
-        path: "Logs/log-.txt",                // Base name
+        path: logPath,             // Base name
         rollingInterval: RollingInterval.Day, // Creates log-2025-11-11.txt, etc.
         retainedFileCountLimit: 14,           // Keep 14 days of logs (optional)
         shared: true,                         // Allow shared access
@@ -44,6 +45,7 @@ services.AddScoped<LdapServiceMain>();
 services.AddScoped<LdapService>();
 services.AddScoped<LdapServiceNovell>();
 services.AddScoped<LdapServiceLinqToLdap>();
+services.AddScoped<LdapServiceDirectoryWrapper>();
 services.AddScoped<SecurityService>();
 
 

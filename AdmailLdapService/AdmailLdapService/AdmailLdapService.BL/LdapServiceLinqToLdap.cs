@@ -122,7 +122,7 @@ namespace AdmailLdapService.BL
                     "Group import (LinqToLdap) finished. Total groups: {Count}",
                     groupsCount);
             }
-            catch (Exception ex)
+                catch (Exception ex)
             {
                 logger.LogError(ex,
                     "Unexpected error while loading LDAP users/groups with LinqToLdap. Host:{Host}, Port:{Port}, BindDn:{BindDn}, BaseDn:{BaseDn}, Message:{Message}",

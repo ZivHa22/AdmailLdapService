@@ -1,6 +1,5 @@
 ﻿
 using AdmailLdapService.BL;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace AdmailLdapService
@@ -10,24 +9,31 @@ namespace AdmailLdapService
 
         private readonly LdapService _ldapService;
         private readonly LdapServiceNovell _ldapServiceNovell;
-        private readonly LdapServiceLinqToLdap _ldapServiceLinqToLdap;
+        private readonly LdapServiceDirectoryWrapper _ldapServiceDirectoryWrapper;
         ILogger<LdapServiceLinqToLdap> _logger;
 
-        public LdapServiceMain(LdapService ldapService, LdapServiceNovell ldapServiceNovell, LdapServiceLinqToLdap ldapServiceLinqToLdap, ILogger<LdapServiceLinqToLdap> logger)
+        public LdapServiceMain(LdapService ldapService, LdapServiceNovell ldapServiceNovell, LdapServiceDirectoryWrapper ldapServiceDirectoryWrapper, ILogger<LdapServiceLinqToLdap> logger)
         {
             _ldapService = ldapService;
             _ldapServiceNovell = ldapServiceNovell;
-            _ldapServiceLinqToLdap = ldapServiceLinqToLdap;
+            _ldapServiceDirectoryWrapper = ldapServiceDirectoryWrapper;
             _logger = logger;
         }
 
         public void Run()
         {
 
-            
+            _logger.LogInformation($"Start _ldapService DirectoryServices.Protocols");
             _ldapService.LoadLdapUsers();
+            _logger.LogInformation($"End _ldapService DirectoryServices.Protocols");
+
+            _logger.LogInformation($"Start _ldapService ldapServiceNovell");
             _ldapServiceNovell.LoadLdapUsersAsync();
-            _ldapServiceLinqToLdap.LoadLdapUsers();
+            _logger.LogInformation($"End _ldapService ldapServiceNovell");
+
+            //_logger.LogInformation($"Start _ldapService LoadLdapUsersAndGroupsAsync");
+            //_ldapServiceDirectoryWrapper.LoadLdapUsersAndGroupsAsync();
+            //_logger.LogInformation($"End _ldapService DirectoryServices.Protocols");
         }
     }
 }

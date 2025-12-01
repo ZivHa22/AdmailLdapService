@@ -1,130 +1,168 @@
-﻿    using AdmailLdapService.Models;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
-    using System.DirectoryServices.Protocols;
+﻿using AdmailLdapService.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.DirectoryServices.Protocols;
 
-    using System.Net;
-    using System.Text.RegularExpressions;
+using System.Net;
+using System.Text.RegularExpressions;
 
 
-    namespace AdmailLdapService.BL
+namespace AdmailLdapService.BL
+{
+    public class LdapService
     {
-        public class LdapService
+
+
+
+        private readonly SecurityService securityService;
+        private ILogger<LdapService> logger;
+        private readonly IConfiguration configuration;
+        public LdapService(ILogger<LdapService> _logger, SecurityService _securityService, IConfiguration _configuration)
         {
+            logger = _logger;
+            securityService = _securityService;
+            configuration = _configuration;
+        }
 
-
-
-            private readonly SecurityService securityService;
-            private ILogger<LdapService> logger;
-            private readonly IConfiguration configuration;
-            public LdapService(ILogger<LdapService> _logger,SecurityService _securityService,IConfiguration _configuration)
+        public void LoadLdapUsers()
+        {
+            LdapDetail ldapDetail = new LdapDetail
             {
-                logger = _logger;   
-                securityService = _securityService;
-                configuration = _configuration;
-            }
+                Id = 1,
+                BaseDn = configuration["LdapDetails:baseDn"],
+                BindDn = configuration["LdapDetails:bindDn"],
+                Host = configuration["LdapDetails:host"],
+                Password = configuration["LdapDetails:password"],
+                Port = int.Parse(configuration["LdapDetails:port"])
+            };
 
-            public void LoadLdapUsers()
+            ldapDetail.Password = securityService.DecryptString(ldapDetail.Password);
+            try
             {
-                LdapDetail ldapDetail = new LdapDetail
-                {
-                    Id =1,
-                    BaseDn = configuration["LdapDetails:baseDn"],
-                    BindDn = configuration["LdapDetails:bindDn"],
-                    Host = configuration["LdapDetails:host"],
-                    Password = configuration["LdapDetails:password"],
-                    Port = int.Parse(configuration["LdapDetails:port"])
-                };
 
-                ldapDetail.Password = securityService.DecryptString(ldapDetail.Password);
-                try
+                var identifier = new LdapDirectoryIdentifier(ldapDetail.Host, ldapDetail.Port);
+                var credentials = new NetworkCredential(ldapDetail.BindDn, ldapDetail.Password);
+                using var connection = new LdapConnection(identifier, credentials, AuthType.Basic)
                 {
-
-                    var identifier = new LdapDirectoryIdentifier(ldapDetail.Host, ldapDetail.Port);
-                    var credentials = new NetworkCredential(ldapDetail.BindDn, ldapDetail.Password);
-                    using var connection = new LdapConnection(identifier, credentials, AuthType.Basic)
-                    {
-                        SessionOptions =
+                    SessionOptions =
                         {
                             ProtocolVersion = 3,
                             ReferralChasing = ReferralChasingOptions.None
                         }
-                    };
+                };
 
 
 
-                    connection.Bind(); // 2. Authenticate
-                    logger.LogInformation("LDAP bind successful.");
-                    // 3. Get all users (objectClass=user)
+                connection.Bind(); // 2. Authenticate
 
-                    string ldapFilter = "(objectClass=user)";
+                // 3. Get all users (objectClass=user)
 
-                    var request = new SearchRequest(
-                        ldapDetail.BaseDn,
-                        ldapFilter,
-                        SearchScope.Subtree,
-                        null
-                    );
-                    var response = (SearchResponse)connection.SendRequest(request);
+                string ldapFilter = "(objectClass=user)";
+                const int pageSize = 500;
 
-                    logger.LogInformation("Users found:");
+                var pageControl = new PageResultRequestControl(pageSize);
 
-                    foreach (SearchResultEntry entry in response.Entries)
+
+                var searchRequest = new SearchRequest(
+                    ldapDetail.BaseDn,
+                    ldapFilter,
+                    SearchScope.Subtree,
+                    null
+                );
+                searchRequest.Controls.Add(pageControl);
+
+
+                var response = (SearchResponse)connection.SendRequest(searchRequest);
+                logger.LogInformation("LDAP bind successful.");
+                logger.LogInformation("Users found:");
+
+                while (true)
+                {
+                    var searchResponse = (SearchResponse)connection.SendRequest(searchRequest);
+
+                    logger.LogInformation("Page returned with {Count} users.", searchResponse.Entries.Count);
+
+                    foreach (SearchResultEntry entry in searchResponse.Entries)
                     {
-                        string adfields = "Usergroups=;";
-                        foreach (string attrName in entry.Attributes.AttributeNames)
-                        {
-                            var values = entry.Attributes[attrName];
-                            foreach (var val in values)
-                            {
-                                if (val is byte[] bytes)
-                                {
-                                    // Handle known binary attributes
-                                    if (attrName.Equals("cn", StringComparison.OrdinalIgnoreCase) || attrName.Equals("mail", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        continue;
-                                    }
-
-                                    else
-                                    {
-                                        // For unknown binary data, convert to Base64
-                                        adfields += $"{attrName}={System.Text.Encoding.UTF8.GetString(bytes)};";
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogInformation($"{attrName}: {val}");
-                                }
-                            }
-                        }
-
                         string cn = entry.Attributes["cn"]?[0]?.ToString() ?? "N/A";
                         string mail = entry.Attributes["mail"]?[0]?.ToString() ?? "N/A";
-                   
 
+                        logger.LogInformation("User: CN={Cn}, Mail={Mail}", cn, mail);
+
+                        // כאן תוכל להמשיך לוגיקה משלך – שמירה ל־DB וכו'
                     }
 
-                    string groupFilter = "(objectClass=group)";
-                    var requestGroups = new SearchRequest(
-                           ldapDetail.BaseDn,  // base DN
-                            groupFilter,
-                            SearchScope.Subtree,
-                             new[] { "cn" }  // get all attributes
-                            );
-                    var responseGroups = (SearchResponse)connection.SendRequest(request);
-                    foreach (SearchResultEntry entry in response.Entries)
+                    // למצוא את ה־PageResultResponseControl כדי לקבל Cookie לעמוד הבא
+                    PageResultResponseControl? pageResponse =
+                        searchResponse.Controls
+                            .OfType<PageResultResponseControl>()
+                            .FirstOrDefault();
+
+                    if (pageResponse == null || pageResponse.Cookie == null || pageResponse.Cookie.Length == 0)
                     {
-                        if (entry.Attributes["cn"] != null)
-                        {
-                            logger.LogInformation($"{entry.Attributes["cn"][0]}");
-                        }
+                        // אין יותר עמודים
+                        break;
                     }
 
+                    // להגדיר Cookie לעמוד הבא
+                    pageControl.Cookie = pageResponse.Cookie;
                 }
-                catch (Exception ex)
+                //foreach (SearchResultEntry entry in response.Entries)
+                //{
+                //    string adfields = "Usergroups=;";
+                //    foreach (string attrName in entry.Attributes.AttributeNames)
+                //    {
+                //        var values = entry.Attributes[attrName];
+                //        foreach (var val in values)
+                //        {
+                //            if (val is byte[] bytes)
+                //            {
+                //                // Handle known binary attributes
+                //                if (attrName.Equals("cn", StringComparison.OrdinalIgnoreCase) || attrName.Equals("mail", StringComparison.OrdinalIgnoreCase))
+                //                {
+                //                    continue;
+                //                }
+
+                //                else
+                //                {
+                //                    // For unknown binary data, convert to Base64
+                //                    adfields += $"{attrName}={System.Text.Encoding.UTF8.GetString(bytes)};";
+                //                }
+                //            }
+                //            else
+                //            {
+                //                logger.LogInformation($"{attrName}: {val}");
+                //            }
+                //        }
+                //    }
+
+                //    string cn = entry.Attributes["cn"]?[0]?.ToString() ?? "N/A";
+                //    string mail = entry.Attributes["mail"]?[0]?.ToString() ?? "N/A";
+
+
+                //}
+
+                string groupFilter = "(objectClass=group)";
+                var requestGroups = new SearchRequest(
+                       ldapDetail.BaseDn,  // base DN
+                        groupFilter,
+                        SearchScope.Subtree,
+                         new[] { "cn" }  // get all attributes
+                        );
+                var responseGroups = (SearchResponse)connection.SendRequest(searchRequest);
+                foreach (SearchResultEntry entry in response.Entries)
                 {
-                    logger.LogError($"LDAP Error: {ex.Message}");
+                    if (entry.Attributes["cn"] != null)
+                    {
+                        logger.LogInformation($"{entry.Attributes["cn"][0]}");
+                    }
                 }
+
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"LDAP Error: {ex.Message}");
             }
         }
     }
+}
