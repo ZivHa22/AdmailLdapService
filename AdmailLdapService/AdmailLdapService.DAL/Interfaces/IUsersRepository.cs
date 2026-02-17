@@ -10,10 +10,10 @@ namespace AdmailLdapService.DAL.Interfaces
     public interface IUsersRepository
     {
 
-        public void AddUsersAd(List<Domainuser> users);
-        public void AddUserAd(Domainuser user);
-        public void AddGroups(List<Domainuser> groups);
-
+        public UserUpdateStatus AddUserAd(Domainuser user);
         public void DeleteAllDomainUsers();
+        public bool InsertUserGroup(List<Usersgroup> usersGroup, string UserName);
+        public UserUpdateStatus AddGroup(Domainuser group);
+        public void DeleteAllUsersGroups();
     }
 }

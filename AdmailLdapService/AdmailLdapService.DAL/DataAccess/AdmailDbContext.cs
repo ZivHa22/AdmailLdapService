@@ -17,6 +17,7 @@ namespace AdmailLdapService.DAL.DataAccess
         public virtual DbSet<Tbladministration> Tbladministrations { get; set; }
         public virtual DbSet<Domainuser> Domainusers { get; set; }
         public virtual DbSet<LdapDetail> LdapDetails { get; set; }
+        public virtual DbSet<Usersgroup> Usersgroups { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -95,6 +96,27 @@ namespace AdmailLdapService.DAL.DataAccess
                 entity.Property(e => e.Port)
                     .HasMaxLength(50)
                     .HasColumnName("port");
+            });
+            modelBuilder.Entity<Usersgroup>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
+            modelBuilder.Entity<LdapDetail>(entity =>
+            {
+                entity.Property(e => e.BaseDn).HasMaxLength(50);
+                entity.Property(e => e.BindDn).HasMaxLength(50);
+                entity.Property(e => e.Host).HasMaxLength(50);
+                entity.Property(e => e.Password).HasMaxLength(50);
+                entity.Property(e => e.Port)
+                    .HasMaxLength(50)
+                    .HasColumnName("port");
+            });
+            modelBuilder.Entity<Domainuser>(entity =>
+            {
+                entity.HasKey(u => u.UserId);
             });
             OnModelCreatingPartial(modelBuilder);
         }

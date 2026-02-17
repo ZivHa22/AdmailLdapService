@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AdmailLdapService.DAL.Respositories
 {
-    public class TblAdministrationRepository:ITblAdministrationRepository
+    public class TblAdministrationRepository : ITblAdministrationRepository
     {
         AdmailDbContext context { get; }
 
