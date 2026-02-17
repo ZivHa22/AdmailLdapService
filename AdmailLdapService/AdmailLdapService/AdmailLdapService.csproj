@@ -22,6 +22,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\AdmailLdapService.BL\AdmailLdapService.BL.csproj" />
+		<ProjectReference Include="..\AdmailLdapService.DAL\AdmailLdapService.DAL.csproj" />
 		<ProjectReference Include="..\AdmailLdapService.Models\AdmailLdapService.Models.csproj" />
 	</ItemGroup>
 

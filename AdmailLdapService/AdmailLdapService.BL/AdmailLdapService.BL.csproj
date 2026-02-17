@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AdmailLdapService.DAL\AdmailLdapService.DAL.csproj" />
     <ProjectReference Include="..\AdmailLdapService.Models\AdmailLdapService.Models.csproj" />
   </ItemGroup>
 

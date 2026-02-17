@@ -3,7 +3,11 @@ using System;
 using AdmailLdapService;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-
+using Microsoft.EntityFrameworkCore;
+using AdmailLdapService.DAL.DataAccess;
+using AdmailLdapService.DAL.Interfaces;
+using AdmailLdapService.DAL.Respositories;
+using Microsoft.Data.SqlClient;
 using Serilog;
 using Microsoft.Extensions.Logging;
 using AdmailLdapService.BL;
@@ -37,15 +41,25 @@ services.AddLogging(loggingBuilder =>
 
 
 
+services.AddDbContext<AdmailDbContext>(options =>
+{
+    SecurityService securityService = new SecurityService();
+    string ConStr = configuration.GetConnectionString("DbConnectionString");
+    SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder(ConStr);
+    string DecryptString = securityService.DecryptString(sqlConnectionStringBuilder.Password);
+    sqlConnectionStringBuilder.Password = DecryptString;
+    string connection = sqlConnectionStringBuilder.ConnectionString;
+    options.UseSqlServer(connection);
+
+});
 
 
 services.AddSingleton<IConfiguration>(configuration);
-
-services.AddScoped<LdapServiceMain>();
+services.AddScoped<ITblAdministrationRepository, TblAdministrationRepository>();
+services.AddScoped<IUsersRepository, UsersRepository>();
 services.AddScoped<LdapService>();
-services.AddScoped<LdapServiceNovell>();
-services.AddScoped<LdapServiceLinqToLdap>();
-services.AddScoped<LdapServiceDirectoryWrapper>();
+services.AddScoped<LdapServiceMain>();
+
 services.AddScoped<SecurityService>();
 
 
