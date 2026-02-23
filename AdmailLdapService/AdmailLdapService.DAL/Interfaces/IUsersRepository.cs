@@ -15,5 +15,9 @@ namespace AdmailLdapService.DAL.Interfaces
         public bool InsertUserGroup(List<Usersgroup> usersGroup, string UserName);
         public UserUpdateStatus AddGroup(Domainuser group);
         public void DeleteAllUsersGroups();
+
+        public void deleteAdFields();
+        public void AddAdFields(Adfield adfield);
+
     }
 }

@@ -18,6 +18,7 @@ namespace AdmailLdapService.DAL.DataAccess
         public virtual DbSet<Domainuser> Domainusers { get; set; }
         public virtual DbSet<LdapDetail> LdapDetails { get; set; }
         public virtual DbSet<Usersgroup> Usersgroups { get; set; }
+        public virtual DbSet<Adfield> Adfields { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

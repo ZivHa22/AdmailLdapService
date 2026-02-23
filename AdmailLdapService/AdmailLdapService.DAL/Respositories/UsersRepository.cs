@@ -176,7 +176,32 @@ namespace AdmailLdapService.DAL.Respositories
             }
         }
 
+        public void deleteAdFields()
+        {
+            try
+            {
+                context.Adfields.RemoveRange(context.Adfields.ToList());
+                context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
 
+
+        public void AddAdFields(Adfield adfield)
+        {
+            try
+            {
+                context.Adfields.Add(adfield);
+                context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
 
         private bool CheckUserExsitByEmail(string email)
         {
