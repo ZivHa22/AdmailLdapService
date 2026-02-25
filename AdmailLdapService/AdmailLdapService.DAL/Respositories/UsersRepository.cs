@@ -202,7 +202,18 @@ namespace AdmailLdapService.DAL.Respositories
                 throw ex;
             }
         }
-
+        public Adfield GetAdfield(string adfieldStr)
+        {
+            try
+            {
+                Adfield adfield = context.Adfields.Where(ad => ad.AdfieldName == adfieldStr).FirstOrDefault();
+                return adfield;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
         private bool CheckUserExsitByEmail(string email)
         {
             if (context.Domainusers.Any(u => u.UserEmail == email))

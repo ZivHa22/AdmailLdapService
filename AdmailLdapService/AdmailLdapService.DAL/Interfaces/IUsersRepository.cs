@@ -18,6 +18,7 @@ namespace AdmailLdapService.DAL.Interfaces
 
         public void deleteAdFields();
         public void AddAdFields(Adfield adfield);
+        public Adfield GetAdfield(string adfield);
 
     }
 }

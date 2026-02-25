@@ -130,7 +130,7 @@ namespace AdmailLdapService.BL
 
                 searchRequest.Controls.Add(pageControl);
                 logger.LogInformation("Begin get users");
-                bool firstUser = true;
+
                 while (true)
                 {
                     var searchResponse = (SearchResponse)connection.SendRequest(searchRequest);
@@ -189,16 +189,18 @@ namespace AdmailLdapService.BL
 
                         }
                         string adfields = "";
-                 
+
                         foreach (string attrName in entry.Attributes.AttributeNames)
                         {
 
 
-                            if (firstUser)
+                            if(usersRepository.GetAdfield(attrName) == null)
                             {
                                 Adfield adfield = new Adfield(attrName);
                                 usersRepository.AddAdFields(adfield);
                             }
+                           
+
 
                             var values = entry.Attributes[attrName];
                             foreach (var val in values)
@@ -229,7 +231,7 @@ namespace AdmailLdapService.BL
                         string mail = entry.Attributes["mail"]?[0]?.ToString() ?? "N/A";
                         Domainuser domainuser = new Domainuser(cn, false, mail, CleanString(Usergroups + adfields));
                         usersRepository.AddUserAd(domainuser);
-                        firstUser = false;
+
                         logger.LogInformation($"User: {cn},Email : {mail}");
 
                     }
