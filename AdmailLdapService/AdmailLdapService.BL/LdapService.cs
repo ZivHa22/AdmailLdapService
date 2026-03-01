@@ -194,12 +194,12 @@ namespace AdmailLdapService.BL
                         {
 
 
-                            if(usersRepository.GetAdfield(attrName) == null)
+                            if (usersRepository.GetAdfield(attrName) == null)
                             {
                                 Adfield adfield = new Adfield(attrName);
                                 usersRepository.AddAdFields(adfield);
                             }
-                           
+
 
 
                             var values = entry.Attributes[attrName];
@@ -207,17 +207,10 @@ namespace AdmailLdapService.BL
                             {
                                 if (val is byte[] bytes)
                                 {
-                                    // Handle known binary attributes
-                                    if (attrName.Equals("cn", StringComparison.OrdinalIgnoreCase) || attrName.Equals("mail", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        continue;
-                                    }
 
-                                    else
-                                    {
-                                        // For unknown binary data, convert to Base64
-                                        adfields += $"{attrName}={Encoding.UTF8.GetString(bytes)};";
-                                    }
+                                    // For unknown binary data, convert to Base64
+                                    adfields += $"{attrName}={Encoding.UTF8.GetString(bytes)};";
+
                                 }
                                 else
                                 {
